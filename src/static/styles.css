@@ -134,6 +134,27 @@ section h3 {
   margin-bottom: 15px;
 }
 
+.button-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.secondary-button {
+  background-color: #6c757d;
+}
+
+.secondary-button:hover {
+  background-color: #5a636a;
+}
+
+.auth-status {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 5px;

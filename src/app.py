@@ -5,7 +5,7 @@ A super simple FastAPI application that allows students to view and sign up
 for extracurricular activities at Mergington High School.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
@@ -18,6 +18,32 @@ app = FastAPI(title="Mergington High School API",
 current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
+
+VALID_ROLES = {"student", "parent", "provider", "admin"}
+ROLE_FEATURES = {
+    "student": [
+        "View the activities catalog",
+        "Sign up for clubs and teams",
+        "Manage your own activity registration"
+    ],
+    "parent": [
+        "View extracurricular options for your student",
+        "Review activity availability",
+        "Track student registrations"
+    ],
+    "provider": [
+        "Manage workshops and competitions",
+        "Create provider profile information",
+        "Update organization-facing content"
+    ],
+    "admin": [
+        "Review platform data and activity listings",
+        "Moderate new submissions",
+        "Access administrative tools"
+    ]
+}
+
+sessions: dict[str, dict[str, str]] = {}
 
 # In-memory activity database
 activities = {
@@ -78,9 +104,71 @@ activities = {
 }
 
 
+def require_auth(authorization: str | None = Header(default=None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    token = authorization.split(" ", 1)[1].strip()
+    user = sessions.get(token)
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+    return user
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
+
+
+@app.get("/auth/roles")
+def get_roles():
+    return {"roles": sorted(VALID_ROLES)}
+
+
+@app.post("/auth/login")
+async def login(request: Request):
+    data = await request.json()
+    email = (data.get("email") or "").strip().lower()
+    role = (data.get("role") or "").strip().lower()
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    if role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid role selected")
+
+    token = os.urandom(16).hex()
+    sessions[token] = {"email": email, "role": role}
+
+    return {
+        "token": token,
+        "user": sessions[token]
+    }
+
+
+@app.post("/auth/logout")
+def logout(authorization: str | None = Header(default=None)):
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        sessions.pop(token, None)
+
+    return {"message": "Signed out successfully"}
+
+
+@app.get("/auth/me")
+def get_current_user(user: dict = Depends(require_auth)):
+    return user
+
+
+@app.get("/auth/dashboard")
+def get_dashboard(user: dict = Depends(require_auth)):
+    return {
+        "role": user["role"],
+        "email": user["email"],
+        "features": ROLE_FEATURES.get(user["role"], [])
+    }
 
 
 @app.get("/activities")
