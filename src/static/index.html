@@ -21,6 +21,38 @@
         </div>
       </section>
 
+      <section id="auth-container">
+        <h3>Role-Based Access</h3>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-email">Email:</label>
+            <input type="email" id="login-email" required placeholder="your-email@mergington.edu" />
+          </div>
+          <div class="form-group">
+            <label for="role-select">Role:</label>
+            <select id="role-select" required>
+              <option value="student">Student</option>
+              <option value="parent">Parent</option>
+              <option value="provider">Provider</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button type="submit">Sign In</button>
+            <button type="button" id="logout-button" class="secondary-button">Sign Out</button>
+          </div>
+        </form>
+
+        <div id="auth-status" class="auth-status info">Not signed in.</div>
+
+        <div id="dashboard-container">
+          <h4>Protected Dashboard</h4>
+          <div id="dashboard-content">
+            <p>Sign in to view role-specific features.</p>
+          </div>
+        </div>
+      </section>
+
       <section id="signup-container">
         <h3>Sign Up for an Activity</h3>
         <form id="signup-form">
